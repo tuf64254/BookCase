@@ -1,6 +1,17 @@
 <resources>
     <string name="app_name">BookCase</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string-array name="books">
+        <item>Art of War</item>
+        <item>1984</item>
+        <item>To Kill a Mockingbird</item>
+        <item>The Great Gatsby</item>
+        <item>All Quiet on the Western Front</item>
+        <item>Hamlet</item>
+        <item>Moby-Dick</item>
+        <item>Catch-22</item>
+        <item>Of Mice and Men</item>
+        <item>The Prince</item>
+    </string-array>
+
 </resources>
