@@ -14,7 +14,7 @@ import android.view.ViewGroup;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ViewPagerFragment extends Fragment {
+public class ViewPagerFragment extends Fragment { //view pager used to hold multiple fragments
 
     public static final String START_INDEX = "start_index";
     int startIndex;
@@ -30,7 +30,7 @@ public class ViewPagerFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null)
-            startIndex = getArguments().getInt(START_INDEX);
+            startIndex = getArguments().getInt(START_INDEX); //sets the start index from the previously created instance
 
     }
 
@@ -42,16 +42,18 @@ public class ViewPagerFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_view_pager, container, false);
         viewPager = view.findViewById(R.id.viewPager);
         viewPager.setAdapter(new ViewPagerAdapter(getChildFragmentManager(), getContext()));
-        viewPager.setCurrentItem(startIndex);
+        //attaches the view pager and sets the view pager adapter
+        viewPager.setCurrentItem(startIndex); //sets the view pager to selected book
 
         return view;
     }
 
     public static ViewPagerFragment newInstance(int startIndex){
+        //stores the start index for the view pager and bundles it so it can be used in the other methods
         ViewPagerFragment vpf = new ViewPagerFragment();
 
         Bundle bundle = new Bundle();
-        bundle.putInt(START_INDEX,startIndex);
+        bundle.putInt(START_INDEX, startIndex);
         vpf.setArguments(bundle);
 
         return vpf;

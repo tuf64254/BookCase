@@ -8,6 +8,5 @@
     <ListView
         android:id="@+id/bookListView"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:entries="@array/books" />
+        android:layout_height="650dp" />
 </FrameLayout>
