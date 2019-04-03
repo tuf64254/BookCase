@@ -56,6 +56,7 @@ public class ViewPagerFragment extends Fragment { //view pager used to hold mult
         bundle.putInt(START_INDEX, startIndex);
         vpf.setArguments(bundle);
 
+
         return vpf;
     }
 

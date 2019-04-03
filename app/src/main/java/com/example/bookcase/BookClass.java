@@ -22,16 +22,17 @@ public class BookClass implements Parcelable {
 
     }
 
-
-
     public BookClass (JSONObject bookObject) throws JSONException{
-        this(bookObject.getInt("id"), bookObject.getString("title"), bookObject.getString("author"),
-                bookObject.getInt("published"), bookObject.getString("coverURL"));
+        this(bookObject.getInt("book_id"), bookObject.getString("title"), bookObject.getString("author"),
+                bookObject.getInt("published"), bookObject.getString("cover_url"));
     }
 
     public String getTitle() {
         return title;
     }
+    public String getAuthor(){ return author;}
+    public int getPublished(){ return published;}
+    public String getCoverURL(){ return coverURL;}
 
     protected BookClass(Parcel in) {
         id = in.readInt();

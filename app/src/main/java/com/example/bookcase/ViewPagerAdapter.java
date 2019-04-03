@@ -27,6 +27,11 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
     }
 
     @Override
+    public int getItemPosition(@NonNull Object object) {
+        return ViewPagerAdapter.POSITION_NONE;
+    }
+
+    @Override
     public int getCount() {
 
         return MainActivity.library.size();
