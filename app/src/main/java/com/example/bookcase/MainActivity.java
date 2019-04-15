@@ -1,7 +1,11 @@
 package com.example.bookcase;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
@@ -24,14 +28,30 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements BookListFragment.BookListInterface {
+import edu.temple.audiobookplayer.AudiobookService;
 
+public class MainActivity extends AppCompatActivity implements BookListFragment.BookListInterface,
+         BookDetailsFragment.BookDetailsInterface{
+    //needs interface to communicate with BookList Fragment
+
+    AudiobookService.MediaControlBinder binder;
+    Intent intent;
     FragmentManager fm = getSupportFragmentManager(); //creates a fragment manager
     boolean smallScreen; //determines if the screen is small
-    public static ArrayList<BookClass> library;
-    BookClass currentBook;
-    String test= "";
+    boolean isRunning;
+    public static ArrayList<BookClass> library; //main array list stores book list that is currently set
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        bindService(intent, connection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop(){
+        super.onStop();
+        unbindService(connection);
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,21 +64,25 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             bookList = new URL("https://kamorris.com/lab/audlib/booksearch.php");
         } catch (MalformedURLException e) {
             e.printStackTrace();
-        }
+        } //sets URL to original book list JSON list
 
         createList(bookList);
+        //calls function which extracts JSON from URL fills book library and then adds desired fragment to view
 
         final EditText editText = findViewById(R.id.editText);
         Button  button = findViewById(R.id.button);
+        //finds search bar text and button
 
-
+        //button is clicked
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String search=editText.getText().toString();
+                String search=editText.getText().toString(); //read search text
                 try {
+
                     URL searchURL= new URL("https://kamorris.com/lab/audlib/booksearch.php?search="+search);
-                    createList(searchURL);
+                    //search is added to search url
+                    createList(searchURL);//creates new list of books derived from search list and fills with fragments
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
@@ -66,8 +90,60 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             }
         });
 
+        intent = new Intent(this, AudiobookService.class);
+        startService(intent);
 
 
+
+
+    }
+
+    private ServiceConnection connection = new ServiceConnection(){
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            binder = (AudiobookService.MediaControlBinder) service;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+    };
+
+
+
+    public void createList(final URL url){ //reads url JSON data sends JSON array to fragment
+
+
+        new Thread() { //need thread to access internet runs parallel
+            @Override
+            public void run() {
+
+                try {
+
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+                    //opens url reads data input stream reads bytes converts to characters
+                    //Buffered reader spaces data so it can be read correctly as code values
+
+                    String tmpResponse = reader.readLine();
+                    String response = "";
+                    while (tmpResponse != null) {
+                        response += tmpResponse;
+                        tmpResponse = reader.readLine();
+                    } //reads whole file stores in response
+
+                    JSONArray JA = new JSONArray(response);
+                    Message msg = Message.obtain();
+                    msg.obj = JA;
+                    bookResponseHandler.sendMessage(msg);
+                    //creates JSONArray and send a message contaning it to handler
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
 
     }
 
@@ -75,21 +151,22 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         @Override
         public boolean handleMessage(Message msg) {
-            library = new ArrayList<BookClass>();
-            try {
+            library = new ArrayList<BookClass>(); //empties list of books
+
+            try { //attempts to recieve JSON array
                 JSONArray JA = (JSONArray) msg.obj;
 
                 JSONObject JO;
                 for (int i=0; i<JA.length();i++){
                     JO=JA.getJSONObject(i);
                     library.add(new BookClass(JO));
-                }
+                } //converts JSON into book objects and adds each to arraylist of books
 
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
-            if(!smallScreen){
+            if(!smallScreen){ //big screen gets a list fragment filled with book list titles
                 BookListFragment newFragment = BookListFragment.newInstance(library);
 
                 fm.beginTransaction()
@@ -97,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                         .addToBackStack(null)
                         .commit();  //adds the book list fragment for book selection also adds it to the back stack
             }
-            else {
+            else { //small screen gets a viewpager fragment which holds the books
                 fm.beginTransaction()
                         .replace(R.id.container_1, ViewPagerFragment.newInstance(0))
                         .addToBackStack(null)
@@ -111,53 +188,44 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         }
     });
 
-    public void createList(final URL url){
-        Thread t =new Thread() {
-            @Override
-            public void run() {
-
-                try {
-
-
-
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-
-                    String tmpResponse = reader.readLine();
-                    String response = "";
-                    while (tmpResponse != null) {
-                        response += tmpResponse;
-                        tmpResponse = reader.readLine();
-                    }
-
-                    JSONArray JA = new JSONArray(response);
-                    Message msg = Message.obtain();
-                    msg.obj = JA;
-                    bookResponseHandler.sendMessage(msg);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        t.start();
-
-    }
 
     @Override
     public void bookselected(int bookIndex) {
         BookDetailsFragment newFragment = BookDetailsFragment.newInstance(library.get(bookIndex));
-        //creates a new book detail fragment and passes the selected book index into the fragment
+        //creates a new book detail fragment and passes the selected book object into the fragment
 
-
+            //replaces fragment with new selected book
             fm.beginTransaction()
-                    .add(R.id.container_2, newFragment)
+                    .replace(R.id.container_2, newFragment)
                     .addToBackStack(null)
                     .commit();
+
 
 
     }
 
 
+    @Override
+    public void play(int id) {
+        if(isRunning){
+            binder.pause();
+        }
+        else {
+            binder.play(id);
+            isRunning = true;
+        }
 
+    }
 
+    @Override
+    public void pause() {
+        binder.pause();
+
+    }
+
+    @Override
+    public void stop() {
+        binder.stop();
+        isRunning=false;
+    }
 }

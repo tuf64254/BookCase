@@ -32,7 +32,7 @@ public class BookListFragment extends Fragment { //this has a list view and retu
     }
 
     public static BookListFragment newInstance(ArrayList<? extends Parcelable> bookList){
-        //stores the start index for the view pager and bundles it so it can be used in the other methods
+        //recieves and stores the list of book objects
         BookListFragment blf = new BookListFragment();
 
         Bundle bundle = new Bundle();
@@ -44,6 +44,7 @@ public class BookListFragment extends Fragment { //this has a list view and retu
 
     @Override
     public void onAttach(Context context){
+        //needs context to attach the adapter and send interface
         super.onAttach(context);
         this.parentContext = context;
     }
@@ -54,7 +55,8 @@ public class BookListFragment extends Fragment { //this has a list view and retu
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null)
-            bookList = getArguments().getParcelableArrayList(BOOK_LIST); //sets the start index from the previously created instance
+            bookList = getArguments().getParcelableArrayList(BOOK_LIST);
+        //recieves the book list
 
     }
 
@@ -65,14 +67,15 @@ public class BookListFragment extends Fragment { //this has a list view and retu
         View v = inflater.inflate(R.layout.fragment_book_list, container, false);
         ArrayList<String> bookNames= new ArrayList<String>();
         listView = v.findViewById(R.id.bookListView);
+        //finds list View target
 
 
-        for(int i=0; i<bookList.size();i++){
+        for(int i=0; i<bookList.size();i++){ //extracts only needed String data from book list
             bookNames.add(bookList.get(i).getTitle());
         }
 
         listView.setAdapter(new ArrayAdapter<String>(parentContext, android.R.layout.simple_list_item_1, bookNames));
-        //attaches list view to an array adapter and fills it with the book array
+        //attaches list view to an array adapter and fills it with String arraylist of book titles
 
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
