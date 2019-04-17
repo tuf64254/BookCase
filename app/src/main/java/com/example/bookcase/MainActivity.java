@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     protected void onStart() {
         super.onStart();
         bindService(intent, connection, Context.BIND_AUTO_CREATE);
+
     }
 
     @Override
@@ -92,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         intent = new Intent(this, AudiobookService.class);
         startService(intent);
+
 
 
 
@@ -182,15 +184,14 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
             }
 
-
-
             return false;
         }
     });
 
 
+
     @Override
-    public void bookselected(int bookIndex) {
+    public void bookSelected(int bookIndex) {
         BookDetailsFragment newFragment = BookDetailsFragment.newInstance(library.get(bookIndex));
         //creates a new book detail fragment and passes the selected book object into the fragment
 
@@ -200,32 +201,35 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                     .addToBackStack(null)
                     .commit();
 
-
-
     }
 
+    Handler progressHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            int progress = msg.what;
+            BookDetailsFragment.sendProgress(progress);
+            return false;
+        }
+    });
 
-    @Override
     public void play(int id) {
-        if(isRunning){
-            binder.pause();
-        }
-        else {
-            binder.play(id);
-            isRunning = true;
-        }
+
+        binder.play(id);
+        binder.setProgressHandler(progressHandler);
 
     }
 
-    @Override
     public void pause() {
         binder.pause();
 
     }
 
-    @Override
     public void stop() {
         binder.stop();
-        isRunning=false;
+
+    }
+
+    public void seek(int position) {
+        binder.seekTo(position);
     }
 }

@@ -83,7 +83,7 @@ public class BookListFragment extends Fragment { //this has a list view and retu
             public void onItemClick(AdapterView<?> parentView, View view, int position, long id) {
                 int bookIndex = position;
 
-                ((BookListInterface) parentContext).bookselected(bookIndex);
+                ((BookListInterface) parentContext).bookSelected(bookIndex);
             }
         }); //after a book is selected transfers the index to main by using the interface
 
@@ -92,7 +92,7 @@ public class BookListFragment extends Fragment { //this has a list view and retu
 
 
     interface BookListInterface{
-        void bookselected(int bookIndex); //forces main to implement this function
+        void bookSelected(int bookIndex); //forces main to implement this function
     }
 
 }
