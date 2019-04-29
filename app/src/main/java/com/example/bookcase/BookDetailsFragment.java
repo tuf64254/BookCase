@@ -18,6 +18,14 @@ import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+
 
 /**
  * A simple {@link Fragment} subclass.
@@ -29,10 +37,26 @@ public class BookDetailsFragment extends Fragment {
     BookClass book;
     Context parentContext;
     static int bookProgress;
+    static final String SAVED_PROGRESS = "savedProgress";
+    static final String DOWNLOADED = "downloaded";
     public boolean isRunning;
+    public boolean downloaded;
     SeekBar seekBar;
     int duration;
+    File file;
+    String filename;
 
+
+    @Override
+    public void onSaveInstanceState(Bundle outState){
+        outState.putInt(SAVED_PROGRESS,bookProgress);
+        outState.putBoolean(DOWNLOADED,downloaded);
+        super.onSaveInstanceState(outState);
+    }
+    public void onRestoreInstanceState(Bundle saved){
+        bookProgress=saved.getInt(SAVED_PROGRESS);
+        downloaded=saved.getBoolean(DOWNLOADED);
+    }
 
     public BookDetailsFragment() {
         // Required empty public constructor
@@ -77,6 +101,8 @@ public class BookDetailsFragment extends Fragment {
         Button playButton = view.findViewById(R.id.playButton);
         Button pauseButton = view.findViewById(R.id.pauseButton);
         Button stopButton = view.findViewById(R.id.stopButton);
+        Button downloadButton = view.findViewById(R.id.downloadButton);
+        Button deleteButton = view.findViewById(R.id.deleteButton);
         seekBar = view.findViewById(R.id.seekBar);
         seekBar.setMax(book.getDuration());
 
@@ -93,16 +119,32 @@ public class BookDetailsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 isRunning=true;
-                ((BookDetailsInterface) parentContext ).play(book.getId());
+                if (bookProgress<=10){
+                    if (downloaded){
+                        ((BookDetailsInterface) parentContext ).play(file);
+                    }
+                    else{
+                        ((BookDetailsInterface) parentContext ).play(book.getId());
+                    }
+
+                }
+                else{
+                    if(downloaded){
+                        ((BookDetailsInterface) parentContext ).play(file,bookProgress-10);
+                    }
+                    else {
+                        ((BookDetailsInterface) parentContext ).play(book.getId(),bookProgress-10);
+                    }
+
+                }
+
             }
         });
 
         pauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 ((BookDetailsInterface) parentContext).pause();
-
 
             }
         });
@@ -112,7 +154,61 @@ public class BookDetailsFragment extends Fragment {
             public void onClick(View v) {
                 isRunning=false;
                 ((BookDetailsInterface) parentContext).stop();
+                bookProgress=0;
 
+            }
+        });
+
+
+
+        filename="File "+String.valueOf(book.getId());
+        downloadButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+                if(downloaded==false){
+                    new Thread() {
+                        @Override
+                        public void run() {
+
+                            URL downloadURL;
+
+                            try {
+
+                                downloadURL = new URL("https://kamorris.com/lab/audlib/download.php?id=" + book.getId());
+                                file = new File(getContext().getFilesDir(), filename);
+
+                                try (BufferedInputStream in = new BufferedInputStream(downloadURL.openStream());
+                                     FileOutputStream fileOutputStream = new FileOutputStream(filename)) {
+                                    byte dataBuffer[] = new byte[1024];
+                                    int bytesRead;
+                                    while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+                                        fileOutputStream.write(dataBuffer, 0, bytesRead);
+                                    }
+                                } catch (IOException e) {
+                                    // handle exception
+                                }
+
+
+
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }.start();
+                }
+                else {
+                    Toast.makeText(getContext(), "File already downloaded", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                file.delete();
             }
         });
 
@@ -121,18 +217,10 @@ public class BookDetailsFragment extends Fragment {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
-
-
                 if(fromUser){
                     ((BookDetailsInterface) parentContext).seek(progress);
-                    //Toast.makeText(getContext(), String.valueOf(duration), Toast.LENGTH_LONG).show();
                 }
-
-
-
-
             }
-
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
 
@@ -171,12 +259,14 @@ public class BookDetailsFragment extends Fragment {
         public boolean handleMessage(Message msg) {
             seekBar.setProgress(bookProgress);
             //seekBar.setProgress(bookProgress*100/764);
-            //Toast.makeText(getContext(),String.valueOf(duration),Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(),String.valueOf(bookProgress),Toast.LENGTH_LONG).show();
 
 
             return false;
         }
     });
+
+
 
     public static void sendProgress(int receivedProgress){
         bookProgress=receivedProgress;
@@ -184,6 +274,9 @@ public class BookDetailsFragment extends Fragment {
 
     interface BookDetailsInterface{
         void play(int id);
+        void play(File file);
+        void play(int id, int position);
+        void play(File file, int position);
         void pause();
         void stop();
         void seek(int position);

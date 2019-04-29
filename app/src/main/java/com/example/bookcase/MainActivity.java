@@ -7,6 +7,7 @@ import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -23,6 +24,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -39,7 +41,23 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     FragmentManager fm = getSupportFragmentManager(); //creates a fragment manager
     boolean smallScreen; //determines if the screen is small
     boolean isRunning;
+    URL bookList;
+    static final String SAVED_LIST = "savedProgress";
     public static ArrayList<BookClass> library; //main array list stores book list that is currently set
+
+
+    @Override
+    public void onSaveInstanceState(Bundle outState){
+        outState.putString(SAVED_LIST, bookList.toString());
+        super.onSaveInstanceState(outState);
+    }
+    public void onRestoreInstanceState(Bundle saved){
+        try {
+            bookList=new URL(saved.getString(SAVED_LIST));
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     protected void onStart() {
@@ -60,12 +78,14 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         smallScreen = findViewById(R.id.container_2) == null; //checks if the layout is a small screen
 
-        URL bookList = null;
-        try {
-            bookList = new URL("https://kamorris.com/lab/audlib/booksearch.php");
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } //sets URL to original book list JSON list
+        if (bookList==null){
+            try {
+                bookList = new URL("https://kamorris.com/lab/audlib/booksearch.php");
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } //sets URL to original book list JSON list
+        }
+
 
         createList(bookList);
         //calls function which extracts JSON from URL fills book library and then adds desired fragment to view
@@ -81,9 +101,9 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                 String search=editText.getText().toString(); //read search text
                 try {
 
-                    URL searchURL= new URL("https://kamorris.com/lab/audlib/booksearch.php?search="+search);
+                    bookList= new URL("https://kamorris.com/lab/audlib/booksearch.php?search="+search);
                     //search is added to search url
-                    createList(searchURL);//creates new list of books derived from search list and fills with fragments
+                    createList(bookList);//creates new list of books derived from search list and fills with fragments
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
@@ -208,6 +228,8 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         public boolean handleMessage(Message msg) {
             int progress = msg.what;
             BookDetailsFragment.sendProgress(progress);
+
+
             return false;
         }
     });
@@ -216,6 +238,25 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         binder.play(id);
         binder.setProgressHandler(progressHandler);
+
+    }
+
+    public void play(File file) {
+
+        binder.play(file);
+        binder.setProgressHandler(progressHandler);
+
+    }
+
+    public void play(int id, int progress) {
+
+        binder.play(id,progress);
+
+    }
+
+    public void play(File file, int progress) {
+
+        binder.play(file,progress);
 
     }
 
